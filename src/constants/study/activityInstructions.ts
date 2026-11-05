@@ -1,0 +1,36 @@
+/**
+ * 학습 활동별 안내 문구 (한 곳에서 관리)
+ * i18n study 네임스페이스 키 - translation.json study 객체에 해당 키가 있어야 함
+ */
+export const ACTIVITY_INSTRUCTIONS = {
+  LISTENING_ACTIVITY1: 'study.instructionListenSoundImage',
+  LISTENING_ACTIVITY2: 'study.instructionListenSoundWord',
+  LISTENING_ACTIVITY3: 'study.instructionListenSoundImage',
+  LISTENING_ACTIVITY4: 'study.instructionImageSound',
+  READING_COMPREHENSION1: 'study.instructionListenSentenceCard',
+  READING_COMPREHENSION2: 'study.instructionImageSentence',
+  READING_COMPREHENSION3: 'study.instructionImageQuestionAnswer',
+  READING_COMPREHENSION4: 'study.instructionQuestionAnswer',
+  MATCHING_CARDS: 'study.instructionMatchCards',
+  VOCABULARY_TEST1: 'study.instructionImageWord',
+  VOCABULARY_TEST2: 'study.instructionImageWord',
+  VOCABULARY_TEST3: 'study.instructionMeaningType',
+  VOCABULARY_TEST4: 'study.instructionMeaningChoose',
+  SUMMARY1: 'study.instructionReadArrange',
+  SUMMARY2: 'study.instructionReadPassageClozeOrder',
+  CLOZE_TEST1: 'study.instructionReadClozeChoose',
+  CLOZE_TEST2: 'study.instructionReadClozeType',
+  CLOZE_TEST3: 'study.instructionListenClozeType',
+  WRITING_ACTIVITY1: 'study.instructionArrangeCardsComplete',
+  TRUE_OR_FALSE: 'study.instructionTrueFalse',
+  PRACTICE_A1: 'study.instructionPracticeA1',
+  PRACTICE_A2: 'study.instructionPracticeA2',
+  PRACTICE_A3: 'study.instructionPracticeA3',
+  PRACTICE_A4: 'study.instructionPracticeA4',
+  PRACTICE_A5: 'study.instructionPracticeA5',
+  PRACTICE_A6: 'study.instructionPracticeA6',
+  PRACTICE_B1: 'study.instructionPracticeB1',
+  PRACTICE_B2: 'study.instructionPracticeB2',
+  PRACTICE_B3: 'study.instructionPracticeB3',
+  PRACTICE_B4: 'study.instructionPracticeB4',
+} as const

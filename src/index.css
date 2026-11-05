@@ -1,0 +1,93 @@
+:root {
+  font-family:
+    'Chiron GoRound TC', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  --scrollbar-size: 5px;
+  --scrollbar-thumb: rgba(148, 163, 184, 0.45);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.6);
+}
+
+@media (max-width: 767px) {
+  :root {
+    font-size: 14px;
+  }
+}
+
+html,
+body,
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+}
+
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+/* Safari 등: 뷰 전환 한 프레임 사이에 기본 흰 배경이 비치며 번쩍이는 것 완화 */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background-color: #000;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* html/body/#root 제외 — 스크롤 영역 공통: 트랙 없음, 얇은 반투명 둥근 thumb */
+*:not(html):not(body):not(#root) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+*:not(html):not(body):not(#root)::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+  background: transparent;
+}
+
+*:not(html):not(body):not(#root)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*:not(html):not(body):not(#root)::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+*:not(html):not(body):not(#root)::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.t {
+  position: absolute;
+  transform-origin: top left;
+  line-height: 1;
+  transform: scale(0.25);
+  z-index: 2;
+  white-space: nowrap;
+  /* Sentence 컴포넌트에서 주입하는 --sentence-highlight 로 하이라이트.
+     innerHTML 재삽입 없이 색상만 갱신되어 번쩍임을 제거한다. */
+  background-color: var(--sentence-highlight, transparent);
+  /* iOS 롱프레스 시스템 팝업(복사/정의 등) 억제 — 학습 흐름 보호 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
