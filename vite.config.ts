@@ -1,6 +1,4 @@
 import react from '@vitejs/plugin-react-swc'
-import fs from 'fs'
-import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import svgr from 'vite-plugin-svgr'
 
@@ -42,17 +40,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3030,
     strictPort: true,
-    https: {
-      key: fs.readFileSync(resolve(import.meta.dirname, 'certs/dev.pem')),
-      cert: fs.readFileSync(resolve(import.meta.dirname, 'certs/cert.pem')),
-    },
     hmr: {
       clientPort: 3030,
     },
     proxy: {
       '/api': {
-        target: 'https://localhost:3000',
-        secure: false,
+        target: 'http://127.0.0.1:3000',
       },
     },
   },

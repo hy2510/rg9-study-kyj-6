@@ -40,6 +40,8 @@ type ConsumableSpellingKeyboardProps = {
   allowRecordingMode?: boolean
   recordingContent?: ReactNode
   allowNativeKeyboard?: boolean
+  /** Vocabulary uses the device keyboard for the full-input option on phones. */
+  systemKeyboardForFullMode?: boolean
   disabled?: boolean
   isNativeMode: boolean
   onInputModeChange?: (mode: InputMode) => void
@@ -82,6 +84,7 @@ export default function ConsumableSpellingKeyboard({
   allowRecordingMode = false,
   recordingContent,
   allowNativeKeyboard = false,
+  systemKeyboardForFullMode = false,
   disabled = false,
   isNativeMode,
   onInputModeChange,
@@ -299,7 +302,11 @@ export default function ConsumableSpellingKeyboard({
                       $active={isFullKeyboard}
                       onClick={() => selectInputMode('full')}
                       aria-pressed={isFullKeyboard}
-                      aria-label='Full keyboard'
+                      aria-label={
+                        systemKeyboardForFullMode
+                          ? 'System keyboard'
+                          : 'Full keyboard'
+                      }
                     >
                       <IconKeyboardFull width={20} height={20} />
                     </ToggleOption>
@@ -335,45 +342,52 @@ export default function ConsumableSpellingKeyboard({
 
           {isRecordingInput && recordingContent
             ? recordingContent
-            : (isFullKeyboard ? QWERTY_ROWS : [simpleKeys]).map(
-                (row, rowIndex) => {
-                  const isLastRow =
-                    rowIndex === (isFullKeyboard ? QWERTY_ROWS.length : 1) - 1
-                  return (
-                    <KeyRow key={rowIndex} $compactRow={isFullKeyboard}>
-                      {row.map((item) => {
-                        const key =
-                          typeof item === 'string'
-                            ? { id: item, letter: item }
-                            : item
-                        const isConsumed =
-                          !isFullKeyboard && simpleUsage.has(key.id)
-                        return (
-                          <LetterKeyButton
-                            key={key.id}
-                            type='button'
-                            disabled={disabled}
-                            $compactRow={isFullKeyboard}
-                            $consumed={isConsumed}
-                            aria-pressed={
-                              isFullKeyboard ? undefined : isConsumed
-                            }
-                            aria-label={`${key.letter}${
-                              isConsumed ? ', selected; press to remove' : ''
-                            }`}
-                            onClick={() =>
-                              isFullKeyboard
-                                ? onKeyPress(key.letter)
-                                : handleSimpleKey(key)
-                            }
-                          >
-                            <KeyLabel $compactRow={isFullKeyboard}>
-                              {key.letter}
-                            </KeyLabel>
-                          </LetterKeyButton>
-                        )
-                      })}
-                      {isLastRow && (
+            : (isFullKeyboard && systemKeyboardForFullMode
+                ? []
+                : isFullKeyboard
+                  ? QWERTY_ROWS
+                  : [simpleKeys]
+              ).map((row, rowIndex) => {
+                const isLastRow =
+                  rowIndex ===
+                  (isFullKeyboard && !systemKeyboardForFullMode
+                    ? QWERTY_ROWS.length
+                    : 1) -
+                    1
+                return (
+                  <KeyRow key={rowIndex} $compactRow={isFullKeyboard}>
+                    {row.map((item) => {
+                      const key =
+                        typeof item === 'string'
+                          ? { id: item, letter: item }
+                          : item
+                      const isConsumed =
+                        !isFullKeyboard && simpleUsage.has(key.id)
+                      return (
+                        <LetterKeyButton
+                          key={key.id}
+                          type='button'
+                          disabled={disabled}
+                          $compactRow={isFullKeyboard}
+                          $consumed={isConsumed}
+                          aria-pressed={isFullKeyboard ? undefined : isConsumed}
+                          aria-label={`${key.letter}${
+                            isConsumed ? ', selected; press to remove' : ''
+                          }`}
+                          onClick={() =>
+                            isFullKeyboard
+                              ? onKeyPress(key.letter)
+                              : handleSimpleKey(key)
+                          }
+                        >
+                          <KeyLabel $compactRow={isFullKeyboard}>
+                            {key.letter}
+                          </KeyLabel>
+                        </LetterKeyButton>
+                      )
+                    })}
+                    {isLastRow &&
+                      !(isFullKeyboard && systemKeyboardForFullMode) && (
                         <ActionKey
                           type='button'
                           disabled={disabled}
@@ -388,26 +402,26 @@ export default function ConsumableSpellingKeyboard({
                           />
                         </ActionKey>
                       )}
-                      {isLastRow && (
-                        <ActionKey
-                          type='button'
-                          onClick={() => onKeyPress('enter')}
-                          disabled={disabled || !isEnterEnabled}
-                          $isEnter
-                          $compactRow={isFullKeyboard}
-                          aria-label='Submit spelling'
-                        >
-                          <IconArrowRightWhite
-                            className='key-icon'
-                            width={20}
-                            height={20}
-                          />
-                        </ActionKey>
-                      )}
-                    </KeyRow>
-                  )
-                },
-              )}
+                    {isLastRow && (
+                      <ActionKey
+                        type='button'
+                        onClick={() => onKeyPress('enter')}
+                        onMouseDown={(event) => event.preventDefault()}
+                        disabled={disabled || !isEnterEnabled}
+                        $isEnter
+                        $compactRow={isFullKeyboard}
+                        aria-label='Submit spelling'
+                      >
+                        <IconArrowRightWhite
+                          className='key-icon'
+                          width={20}
+                          height={20}
+                        />
+                      </ActionKey>
+                    )}
+                  </KeyRow>
+                )
+              })}
         </>
       )}
     </KeyboardRoot>

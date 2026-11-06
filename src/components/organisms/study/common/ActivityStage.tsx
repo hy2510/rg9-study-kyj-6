@@ -13,6 +13,7 @@ type ActivityStageProps = {
    * 부수 요소(Remix 의 ActivityTypeBadge 등). Legacy 는 미전달.
    */
   extras?: ReactNode
+  fillMobileViewport?: boolean
 }
 
 /**
@@ -26,13 +27,16 @@ type ActivityStageProps = {
 export default function ActivityStage({
   children,
   extras,
+  fillMobileViewport = false,
 }: ActivityStageProps) {
   return (
-    <StageWrapper>
-      <StageContent>
+    <StageWrapper $fillMobileViewport={fillMobileViewport}>
+      <StageContent $fillMobileViewport={fillMobileViewport}>
         <QuizContainerStatusHeader />
         <StageBodySlot>
-          <StageBody>{children}</StageBody>
+          <StageBody $fillMobileViewport={fillMobileViewport}>
+            {children}
+          </StageBody>
         </StageBodySlot>
       </StageContent>
       {extras}
@@ -40,7 +44,7 @@ export default function ActivityStage({
   )
 }
 
-const StageWrapper = styled.div`
+const StageWrapper = styled.div<{ $fillMobileViewport: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -52,10 +56,18 @@ const StageWrapper = styled.div`
 
   ${media.mobile} {
     padding: 0 8px;
+    ${({ $fillMobileViewport }) =>
+      $fillMobileViewport &&
+      `
+      min-height: 0;
+      /* Match the original stage's viewport minus 40px spacing. */
+      padding-top: 20px;
+      padding-bottom: 20px;
+    `}
   }
 `
 
-const StageContent = styled.div`
+const StageContent = styled.div<{ $fillMobileViewport: boolean }>`
   width: 100%;
   max-width: 900px;
   max-height: calc(100vh - 40px);
@@ -82,6 +94,13 @@ const StageContent = styled.div`
 
   ${media.mobile} {
     border-radius: 24px;
+    ${({ $fillMobileViewport }) =>
+      $fillMobileViewport &&
+      `
+      height: 100%;
+      min-height: 0;
+      max-height: 100%;
+    `}
   }
 `
 
@@ -95,7 +114,7 @@ const StageBodySlot = styled.div`
   min-height: 0;
 `
 
-const StageBody = styled.div`
+const StageBody = styled.div<{ $fillMobileViewport: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -103,5 +122,13 @@ const StageBody = styled.div`
 
   ${media.mobile} {
     gap: 16px;
+    ${({ $fillMobileViewport }) =>
+      $fillMobileViewport &&
+      `
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      overflow-y: auto;
+    `}
   }
 `

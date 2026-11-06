@@ -433,6 +433,15 @@ export default function LegacyStudyContainer({
   )
 
   const onCurrentActivityFinish = () => {
+    // Close the device keyboard before opening any step result or finishing study.
+    const activeElement = document.activeElement
+    if (
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement ||
+      (activeElement instanceof HTMLElement && activeElement.isContentEditable)
+    ) {
+      activeElement.blur()
+    }
     postToParent({ type: 'ACTIVITY_FINISHED', step: currentStepId })
     if (currentActivity === ACTIVITY.WRITING_2) {
       proceedToNextStep()
@@ -445,7 +454,6 @@ export default function LegacyStudyContainer({
     setIsCurrentStepRetest(false)
     setCurrentStepId(step)
   }
-
 
   /**
    * 사이드 메뉴에서 스텝 카드 헤더를 눌러 자유 이동할 때 사용 (리뷰/스태프/프리뷰 모드).
@@ -586,6 +594,7 @@ export default function LegacyStudyContainer({
   return (
     <HeartContextProvider value={heart}>
       <StudyShell
+        fitMobileViewport={isVocabularyActivity}
         character={CHARACTER}
         isVisible={isVisible}
         headerProps={{
@@ -643,7 +652,10 @@ export default function LegacyStudyContainer({
         }}
       >
         {!isVocaCardsOpen && component && !isWaitingForAutomaticVocaCards ? (
-          <ActivityStage key={`${currentStepId}:${stepRunNonce}`}>
+          <ActivityStage
+            key={`${currentStepId}:${stepRunNonce}`}
+            fillMobileViewport={isVocabularyActivity}
+          >
             <QuestionSoundSlotProvider>{component}</QuestionSoundSlotProvider>
           </ActivityStage>
         ) : null}

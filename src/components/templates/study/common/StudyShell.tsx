@@ -7,6 +7,8 @@ import Header, { type HeaderProps } from '@components/organisms/common/Header'
 import { QuizFeedbackProvider } from '@contexts/QuizFeedbackContext'
 import { StudyStatusProvider } from '@contexts/StudyStatusContext'
 import { StudyVisibilityContext } from '@contexts/StudyVisibilityContext'
+import { useMobileViewport } from '@hooks/useMobileViewport'
+import { useVisualViewportRect } from '@hooks/useVisualViewportRect'
 
 type StudyShellProps = {
   /** Header organism 에 그대로 전달되는 props (variant 별 union) */
@@ -27,6 +29,7 @@ type StudyShellProps = {
    * 위해 자식 훅에서 `useStudyVisibility()` 로 구독.
    */
   isVisible?: boolean
+  fitMobileViewport?: boolean
 }
 
 /**
@@ -42,14 +45,32 @@ export default function StudyShell({
   children,
   modals,
   isVisible = true,
+  fitMobileViewport = false,
 }: StudyShellProps) {
+  const mobile = useMobileViewport()
+  const fitViewport = fitMobileViewport && mobile
+  const viewport = useVisualViewportRect(fitViewport)
   return (
     <StudyVisibilityContext.Provider value={isVisible}>
-      <StudyWrapper>
+      <StudyWrapper
+        style={
+          fitViewport
+            ? {
+                top: viewport.top,
+                left: viewport.left,
+                width: viewport.width,
+                height: viewport.height,
+              }
+            : undefined
+        }
+      >
         <StudyStatusProvider headerProps={headerProps}>
           <Header {...headerProps} />
 
-          <HeaderBody $headerExpanded>
+          <HeaderBody
+            $headerExpanded
+            style={fitViewport ? { flex: '1 1 0', minHeight: 0 } : undefined}
+          >
             <QuizFeedbackProvider character={character}>
               {children}
             </QuizFeedbackProvider>

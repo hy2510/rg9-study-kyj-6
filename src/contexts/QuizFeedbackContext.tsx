@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { createPortal } from 'react-dom'
 
 import { media } from '@styles/tokens/breakpoints'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +17,7 @@ import { styled } from 'styled-components'
 
 import correctionCorrectSound from '@assets/sounds/common/correction-correct-sound.mp3'
 import correctionIncorrectSound from '@assets/sounds/common/correction-incorrect-sound.mp3'
+import { useVisualViewportRect } from '@hooks/useVisualViewportRect'
 import { QUIZ_FEEDBACK } from '@src/constants/study/quizFeedback'
 import { getQuizCorrectionCharacterMarks } from '@utils/Assets'
 
@@ -51,6 +53,7 @@ export function QuizFeedbackProvider({
   } | null>(null)
   const [isExiting, setIsExiting] = useState(false)
   const [enterOnscreen, setEnterOnscreen] = useState(false)
+  const viewport = useVisualViewportRect(banner !== null)
 
   useEffect(() => {
     if (!banner) {
@@ -160,51 +163,66 @@ export function QuizFeedbackProvider({
   return (
     <QuizFeedbackContext.Provider value={{ presentResult }}>
       {children}
-      {banner ? (
-        <FeedbackBar
-          $isCorrect={banner.isCorrect}
-          $enterOnscreen={enterOnscreen}
-          $exiting={isExiting}
-          onClick={dismissAndContinue}
-          onTransitionEnd={onFeedbackBarTransitionEnd}
-        >
-          <FeedbackTextCol>
-            <FeedbackTitle>
-              <TranslatedLine
-                i18nKey={
-                  banner.isCorrect
-                    ? QUIZ_FEEDBACK.CORRECT
-                    : QUIZ_FEEDBACK.INCORRECT
-                }
-              />
-            </FeedbackTitle>
-            {!banner.isCorrect ? (
-              <FeedbackHint>
-                {banner.correctAnswer ? (
-                  <span className='right-answer'>
-                    Right Answer | {banner.correctAnswer}
-                  </span>
-                ) : (
-                  <span className='tap-to-continue'>
-                    <TranslatedLine i18nKey={QUIZ_FEEDBACK.TAP_TO_CONTINUE} />
-                  </span>
-                )}
-              </FeedbackHint>
-            ) : null}
-          </FeedbackTextCol>
-          <CharacterFigure aria-hidden>
-            <img
-              src={
-                banner.isCorrect
-                  ? characterMarks.correct
-                  : characterMarks.incorrect
-              }
-              alt=''
-              draggable={false}
-            />
-          </CharacterFigure>
-        </FeedbackBar>
-      ) : null}
+      {banner
+        ? createPortal(
+            <FeedbackViewport
+              style={{
+                top: viewport.top,
+                left: viewport.left,
+                width: viewport.width,
+                height: viewport.height,
+              }}
+            >
+              <FeedbackBar
+                $isCorrect={banner.isCorrect}
+                $enterOnscreen={enterOnscreen}
+                $exiting={isExiting}
+                onClick={dismissAndContinue}
+                onPointerDown={(event) => event.preventDefault()}
+                onTransitionEnd={onFeedbackBarTransitionEnd}
+              >
+                <FeedbackTextCol>
+                  <FeedbackTitle>
+                    <TranslatedLine
+                      i18nKey={
+                        banner.isCorrect
+                          ? QUIZ_FEEDBACK.CORRECT
+                          : QUIZ_FEEDBACK.INCORRECT
+                      }
+                    />
+                  </FeedbackTitle>
+                  {!banner.isCorrect ? (
+                    <FeedbackHint>
+                      {banner.correctAnswer ? (
+                        <span className='right-answer'>
+                          Right Answer | {banner.correctAnswer}
+                        </span>
+                      ) : (
+                        <span className='tap-to-continue'>
+                          <TranslatedLine
+                            i18nKey={QUIZ_FEEDBACK.TAP_TO_CONTINUE}
+                          />
+                        </span>
+                      )}
+                    </FeedbackHint>
+                  ) : null}
+                </FeedbackTextCol>
+                <CharacterFigure aria-hidden>
+                  <img
+                    src={
+                      banner.isCorrect
+                        ? characterMarks.correct
+                        : characterMarks.incorrect
+                    }
+                    alt=''
+                    draggable={false}
+                  />
+                </CharacterFigure>
+              </FeedbackBar>
+            </FeedbackViewport>,
+            document.body,
+          )
+        : null}
     </QuizFeedbackContext.Provider>
   )
 }
@@ -219,13 +237,21 @@ export function useQuizFeedbackOptional(): QuizFeedbackContextValue | null {
   return useContext(QuizFeedbackContext)
 }
 
+// Render outside the transformed study background; use the area above the OS keyboard.
+const FeedbackViewport = styled.div`
+  position: fixed;
+  z-index: 9000;
+  pointer-events: none;
+`
+
 const FeedbackBar = styled.div<{
   $isCorrect: boolean
   $enterOnscreen: boolean
   $exiting: boolean
 }>`
   cursor: pointer;
-  position: fixed;
+  position: absolute;
+  pointer-events: auto;
   left: 0;
   right: 0;
   bottom: 0;

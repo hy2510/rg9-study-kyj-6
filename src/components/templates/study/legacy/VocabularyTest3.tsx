@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { flushSync } from 'react-dom'
 
 import { media } from '@styles/tokens/breakpoints'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +23,7 @@ import { MeaningPanel } from '@components/atoms/study/activities/vocabulary-test
 import QuizComment from '@components/atoms/study/comments/QuizComment'
 import { QuizBody } from '@components/atoms/study/layout/QuizBody'
 import ConsumableSpellingKeyboard from '@components/organisms/study/common/ConsumableSpellingKeyboard'
+import MobileVocabularyInput from '@components/organisms/study/common/MobileVocabularyInput'
 import SpellingInputDisplay from '@components/organisms/study/common/SpellingInputDisplay'
 import { AppContext, AppContextProps } from '@contexts/AppContext'
 import { useHeartContext } from '@contexts/HeartContext'
@@ -47,7 +49,6 @@ import { IVocabulary3Test } from '@src/interfaces/study/IVocabulary'
 import { captureFinishStudyInfoFromResult } from '@src/utils/study/finishStudyInfo'
 import {
   isPracticeGroupStart,
-  isPracticeRecordingSupported,
   PRACTICE_GROUP_SIZE,
   resolveVocabularyTest3PronunciationLabelKey,
 } from '@src/utils/study/legacy/vocabularyTest3Helpers'
@@ -98,8 +99,8 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
   const [testInputMode, setTestInputMode] = useState<
     'simple' | 'full' | 'recording'
   >('simple')
-  const [isNativeKeyboard, setIsNativeKeyboard] = useState(false)
   const isMobileViewport = useMobileViewport()
+  const mobileInputRef = useRef<HTMLInputElement>(null)
   const isWorking = useRef<boolean>(true)
   const onEnterRef = useRef<() => void>(() => {})
   const playedPracticeAudioIndexRef = useRef<number | null>(null)
@@ -107,10 +108,6 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
   useEffect(() => {
     setQuestionNumberVisible?.(practiceQuizIndex === null)
   }, [practiceQuizIndex, setQuestionNumberVisible])
-
-  useEffect(() => {
-    if (!isMobileViewport) setIsNativeKeyboard(false)
-  }, [isMobileViewport])
 
   useEffect(
     () => () => setQuestionNumberVisible?.(true),
@@ -379,18 +376,6 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
   }, [recordingResult])
 
   useEffect(() => {
-    if (recordingResult !== 'unsupported') return
-    if (practiceQuizIndex === null) return
-    resetRecordingAnalysis()
-    advancePractice()
-  }, [
-    advancePractice,
-    practiceQuizIndex,
-    recordingResult,
-    resetRecordingAnalysis,
-  ])
-
-  useEffect(() => {
     if (penaltyState === 'penalty') {
       isWorking.current = false
     } else if (penaltyState === 'success') {
@@ -405,13 +390,9 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
       if (isWorking.current) return
 
       if (practiceQuizIndex !== null && inputLetters.length === 0) {
-        if (!isPracticeRecordingSupported()) {
-          advancePractice()
-          return
-        }
         setInputLetters(getLettersOnly(currentMeta.correctText).toLowerCase())
         setCheckedIncorrect(false)
-        setIsNativeKeyboard(false)
+        mobileInputRef.current?.blur()
         setIsPracticePronunciation(true)
         isWorking.current = true
         return
@@ -427,11 +408,7 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
         }
 
         const showPronunciationStep = () => {
-          if (!isPracticeRecordingSupported()) {
-            advancePractice()
-            return
-          }
-          setIsNativeKeyboard(false)
+          mobileInputRef.current?.blur()
           setIsPracticePronunciation(true)
           isWorking.current = true
         }
@@ -534,7 +511,7 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
   )
 
   useSpellingPhysicalKeyboard({
-    enabled: !(isMobileViewport && isNativeKeyboard),
+    enabled: !isMobileViewport,
     captureTab: false,
     onKeyPress: handleKeyPress,
   })
@@ -586,8 +563,32 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
   const isRecordingActionLocked =
     isRecordingMode || isAnalyzing || recordingResult === 'correct'
 
+  const practiceSoundButton = isPractice ? (
+    <PracticeSoundButton
+      type='button'
+      aria-label={t('study.vocabularyPractice.playWordSound', {
+        word: currentMeta.correctText,
+      })}
+      onClick={(event: MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation()
+        if (isPracticePronunciation) {
+          if (isRecordingActionLocked || !currentMeta?.sound) return
+          stopAudio()
+          playAudio(currentMeta.sound)
+        } else {
+          handlePracticeDisplaySound()
+        }
+      }}
+    >
+      <IconSpeaker width={28} height={28} />
+    </PracticeSoundButton>
+  ) : undefined
+
   return (
-    <QuizBody $fillToMaxHeightOnTablet>
+    <VocabularyBody
+      $maxHeightPx={isMobileViewport ? null : undefined}
+      $fillToMaxHeightOnTablet
+    >
       <QuizComment>{t(ACTIVITY_INSTRUCTIONS.VOCABULARY_TEST3)}</QuizComment>
       <TypingContent>
         <SpellingInputDisplay
@@ -604,27 +605,22 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
             recordingResult === 'correct' || recordingResult === 'incorrect'
           }
           onInputLetterClick={removeInputLetter}
-          displayLeadingContent={
-            isPractice ? (
-              <PracticeSoundButton
-                type='button'
-                aria-label={t('study.vocabularyPractice.playWordSound', {
-                  word: currentMeta.correctText,
-                })}
-                onClick={(event: MouseEvent<HTMLButtonElement>) => {
-                  event.stopPropagation()
-                  if (isPracticePronunciation) {
-                    if (isRecordingActionLocked || !currentMeta?.sound) return
-                    stopAudio()
-                    playAudio(currentMeta.sound)
-                  } else {
-                    handlePracticeDisplaySound()
-                  }
-                }}
-              >
-                <IconSpeaker width={28} height={28} />
-              </PracticeSoundButton>
+          nativeInput={
+            isMobileViewport &&
+            (isPractice || testInputMode === 'full') &&
+            !isPracticePronunciation ? (
+              <MobileVocabularyInput
+                inputRef={mobileInputRef}
+                word={currentMeta.correctText}
+                value={inputLetters}
+                onValueChange={handleNativeValueChange}
+                onEnter={() => handleKeyPress('enter')}
+              />
             ) : undefined
+          }
+          displayLeadingContent={practiceSoundButton}
+          displayTrailingContent={
+            isPractice ? <PracticeSoundSpacer aria-hidden='true' /> : undefined
           }
           renderDisplay={(display) => (
             <PracticeMeaningPanel $recordingResult={recordingResult}>
@@ -680,10 +676,11 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
               </PronunciationPractice>
             ) : (
               <ConsumableSpellingKeyboard
+                systemKeyboardForFullMode={isMobileViewport}
                 correctWord={currentMeta.correctText}
                 inputLetters={inputLetters}
-                allowNativeKeyboard={isMobileViewport}
-                isNativeMode={isNativeKeyboard}
+                allowNativeKeyboard={false}
+                isNativeMode={false}
                 isEnterEnabled={
                   isPractice ? isPracticeEnterEnabled : isAllFilled
                 }
@@ -718,12 +715,15 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
                   ) : undefined
                 }
                 onInputModeChange={(mode) => {
-                  setTestInputMode(mode)
+                  flushSync(() => setTestInputMode(mode))
+                  if (isMobileViewport && mode === 'full') {
+                    mobileInputRef.current?.focus({ preventScroll: true })
+                  }
                   resetRecordingAnalysis()
                   setCheckedIncorrect(false)
                   if (mode === 'recording') setInputLetters('')
                 }}
-                onNativeModeChange={setIsNativeKeyboard}
+                onNativeModeChange={() => {}}
                 onNativeValueChange={handleNativeValueChange}
                 onRemoveInputLetter={removeInputLetter}
                 onKeyPress={handleKeyPress}
@@ -738,9 +738,20 @@ export default function VocabularyTest3(props: ILegacyStudyData) {
           onKeyPress={handleKeyPress}
         />
       </TypingContent>
-    </QuizBody>
+    </VocabularyBody>
   )
 }
+
+const VocabularyBody = styled(QuizBody)`
+  ${media.mobile} {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+`
 
 const TypingContent = styled.div`
   ${media.tablet} {
@@ -773,10 +784,13 @@ const PracticeMeaningPanel = styled(MeaningPanel)<{
 `
 
 const PracticeSoundButton = styled.button`
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  width: 28px;
   margin-right: 6px;
   padding: 0;
   border: none;
@@ -785,11 +799,17 @@ const PracticeSoundButton = styled.button`
   cursor: pointer;
 
   ${media.mobile} {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 1;
+    width: 44px;
+    height: 44px;
     margin-right: 0;
+  }
+`
+
+// Balance the speaker without moving it outside the scrollable input area.
+const PracticeSoundSpacer = styled.span`
+  flex: 0 0 34px;
+  ${media.mobile} {
+    flex-basis: 44px;
   }
 `
 

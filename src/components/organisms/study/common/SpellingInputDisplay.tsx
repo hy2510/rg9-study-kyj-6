@@ -118,10 +118,13 @@ type SpellingInputDisplayProps = {
   emphasizeFeedbackText?: boolean
   /** 입력 슬롯 왼쪽에 표시할 컨트롤 */
   displayLeadingContent?: ReactNode
+  displayTrailingContent?: ReactNode
   /** 입력 영역을 뜻/설명 등의 콘텐츠로 감쌀 때 사용 */
   renderDisplay?: (display: ReactNode) => ReactNode
   /** 지정하면 기존 키보드 대신 같은 위치에 표시 */
   keyboardReplacement?: ReactNode
+  /** Mobile Vocabulary uses a native input over the existing spelling slots. */
+  nativeInput?: ReactNode
   /** 입력 표시 영역을 클릭했을 때 실행 */
   onDisplayClick?: () => void
   /** 입력된 글자 슬롯을 누르면 해당 letters-only 인덱스를 전달 */
@@ -152,8 +155,10 @@ export default function SpellingInputDisplay({
   plainDisplay = false,
   emphasizeFeedbackText = false,
   displayLeadingContent,
+  displayTrailingContent,
   renderDisplay,
   keyboardReplacement,
+  nativeInput,
   onDisplayClick,
   onInputLetterClick,
   onKeyPress,
@@ -167,6 +172,7 @@ export default function SpellingInputDisplay({
       role={onDisplayClick ? 'button' : undefined}
       tabIndex={onDisplayClick ? 0 : undefined}
       onClick={onDisplayClick}
+      style={nativeInput ? { position: 'relative' } : undefined}
       onKeyDown={
         onDisplayClick
           ? (event: KeyboardEvent<HTMLDivElement>) => {
@@ -178,6 +184,7 @@ export default function SpellingInputDisplay({
           : undefined
       }
     >
+      {nativeInput}
       {displayLeadingContent}
       {isCorrect ? (
         <SlotText $tone='success' $emphasized={emphasizeFeedbackText}>
@@ -253,6 +260,7 @@ export default function SpellingInputDisplay({
           )
         })
       )}
+      {displayTrailingContent}
     </SpellingDisplayBox>
   )
 
